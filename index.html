@@ -5,55 +5,126 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kritik Seçim Espor</title>
 <style>
+  * { -webkit-tap-highlight-color: transparent; }
   body { background:#0d0f1a; color:#e8eaf6; font-family:Arial,sans-serif;
-         margin:0; display:flex; justify-content:center; padding:20px; }
+         margin:0; display:flex; justify-content:center; padding:20px; min-height:100vh; }
+
+  /* Arka plan ışık hâleleri */
+  body::before { content:""; position:fixed; top:0; left:0; right:0; bottom:0; z-index:-1;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(124,77,255,.22), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(0,229,255,.14), transparent 45%);
+    animation: arkaPlan 8s ease-in-out infinite; }
+
   #oyun { width:100%; max-width:480px; }
-  h1 { text-align:center; color:#7c4dff; margin:0 0 20px; font-size:26px; }
+
+  h1 { text-align:center; margin:0 0 22px; font-size:26px; letter-spacing:1px;
+       background:linear-gradient(90deg,#7c4dff,#00e5ff);
+       -webkit-background-clip:text; background-clip:text;
+       -webkit-text-fill-color:transparent; color:transparent;
+       animation: baslikParla 4s ease-in-out infinite; }
   h2 { text-align:center; margin:0 0 16px; font-size:20px; }
+
   .ekran { display:none; }
-  .ekran.aktif { display:block; }
+  .ekran.aktif { display:block; animation: ekranGiris .35s ease-out; }
 
-  .stats { display:flex; gap:10px; margin-bottom:20px; }
-  .stat { flex:1; text-align:center; font-size:13px; }
-  .bar { height:10px; background:#252a44; border-radius:5px; margin-top:6px; overflow:hidden; }
-  .dolu { height:100%; background:#00e5ff; width:50%; transition:width .4s, background .4s; }
-  .dolu.tehlike { background:#ff5252; }
+  /* Göstergeler */
+  .stats { display:flex; gap:8px; margin-bottom:20px; }
+  .stat { flex:1; text-align:center; font-size:13px; padding:8px 2px; border-radius:10px; }
+  .stat.artti { animation: yesilFlas .8s ease-out; }
+  .stat.azaldi { animation: kirmiziFlas .8s ease-out; }
+  .bar { height:10px; background:#252a44; border-radius:5px; margin-top:6px; overflow:hidden; margin-left:4px; margin-right:4px; }
+  .dolu { height:100%; width:50%; border-radius:5px;
+          background:linear-gradient(90deg,#00b8d4,#00e5ff);
+          box-shadow:0 0 8px rgba(0,229,255,.55);
+          transition:width .5s ease, background .4s; }
+  .dolu.tehlike { background:linear-gradient(90deg,#ff1744,#ff5252);
+                  box-shadow:0 0 10px rgba(255,82,82,.8);
+                  animation: nabiz 1s ease-in-out infinite; }
 
-  #kart { background:#171b30; border:1px solid #2e3558; border-radius:12px;
-          padding:24px; min-height:140px; font-size:18px; line-height:1.5; }
+  /* Kart */
+  #kart { background:linear-gradient(160deg,#1a1f38,#141830);
+          border:1px solid #2e3558; border-radius:14px;
+          padding:24px; min-height:140px; font-size:18px; line-height:1.5;
+          box-shadow:0 0 24px rgba(124,77,255,.15); }
+  #kart.giris { animation: kartGiris .35s ease-out; }
+  #kart.efektBasari { animation: basariParla .9s ease-out; }
+  #kart.efektBasarisiz { animation: sars .5s ease-out, kirmiziParla .9s ease-out; }
+  #kart.efektBitti { animation: sars .6s ease-out; border-color:#ff5252;
+                     box-shadow:0 0 30px rgba(255,82,82,.45); }
+
   .basari { color:#69f0ae; font-weight:bold; }
   .basarisiz { color:#ff5252; font-weight:bold; }
-  .uyari { color:#ffd740; font-weight:bold; font-size:15px; margin-bottom:12px; }
+  .uyari { color:#ffd740; font-weight:bold; font-size:15px; margin-bottom:12px;
+           animation: nabiz 1s ease-in-out 2; }
   .etki { margin-top:14px; font-size:15px; line-height:1.8; }
   .art { color:#69f0ae; }
   .azal { color:#ff8a80; }
   .gider { color:#8a90b8; }
 
+  /* Butonlar */
   .butonlar { display:flex; gap:10px; margin-top:16px; }
-  button { flex:1; padding:14px; font-size:15px; color:#fff; background:#7c4dff;
-           border:none; border-radius:8px; cursor:pointer; }
-  button:hover { background:#9e7bff; }
-  button:disabled { opacity:.35; cursor:default; }
-  button:disabled:hover { background:#7c4dff; }
-  button.ikincil { background:#252a44; }
+  button { flex:1; padding:14px; font-size:15px; color:#fff;
+           background:linear-gradient(135deg,#7c4dff,#6a3de8);
+           border:none; border-radius:10px; cursor:pointer;
+           box-shadow:0 4px 14px rgba(124,77,255,.35);
+           transition:transform .12s, box-shadow .2s, filter .2s; }
+  button:hover { filter:brightness(1.12); box-shadow:0 6px 18px rgba(124,77,255,.5); }
+  button:active { transform:scale(.96); }
+  button:disabled { opacity:.35; cursor:default; box-shadow:none; filter:none; transform:none; }
+  button.ikincil { background:#252a44; box-shadow:none; }
   button.ikincil:hover { background:#323a60; }
 
   .menu-liste { display:flex; flex-direction:column; gap:12px; }
   .menu-liste button { flex:none; padding:18px; font-size:17px; }
   .menu-liste small { display:block; margin-top:4px; font-size:12px; opacity:.8; }
+  .ekran.aktif .menu-liste > * { animation: yukari .45s ease-out both; }
+  .ekran.aktif .menu-liste > *:nth-child(1) { animation-delay:.03s; }
+  .ekran.aktif .menu-liste > *:nth-child(2) { animation-delay:.10s; }
+  .ekran.aktif .menu-liste > *:nth-child(3) { animation-delay:.17s; }
+  .ekran.aktif .menu-liste > *:nth-child(4) { animation-delay:.24s; }
 
   .mod-btn { text-align:left; }
   .mod-btn b { font-size:18px; }
 
   #sayac { text-align:center; margin-top:16px; color:#8a90b8; font-size:14px; }
-  #tehlikeYazi { text-align:center; margin-top:8px; color:#ff5252; font-size:14px; font-weight:bold; min-height:18px; }
+  #tehlikeYazi { text-align:center; margin-top:8px; color:#ff5252; font-size:14px;
+                 font-weight:bold; min-height:18px; }
 
   .menu-kucuk { flex:none; width:auto; padding:8px 14px; font-size:13px; margin-bottom:14px; }
 
   textarea { width:100%; box-sizing:border-box; min-height:140px; padding:12px; font-size:16px;
-             background:#171b30; color:#e8eaf6; border:1px solid #2e3558; border-radius:8px;
+             background:#171b30; color:#e8eaf6; border:1px solid #2e3558; border-radius:10px;
              font-family:Arial,sans-serif; }
+  textarea:focus { outline:none; border-color:#7c4dff; box-shadow:0 0 12px rgba(124,77,255,.4); }
   .not { color:#8a90b8; font-size:13px; line-height:1.5; margin-top:12px; text-align:center; }
+
+  /* Animasyonlar */
+  @keyframes ekranGiris { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes yukari { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+  @keyframes kartGiris { from { opacity:0; transform:translateX(30px) rotate(2deg); } to { opacity:1; transform:none; } }
+  @keyframes sars { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-8px); }
+                    40% { transform:translateX(8px); } 60% { transform:translateX(-6px); }
+                    80% { transform:translateX(6px); } }
+  @keyframes basariParla {
+    0%   { box-shadow:0 0 0 rgba(105,240,174,0); }
+    35%  { box-shadow:0 0 32px rgba(105,240,174,.65); border-color:#69f0ae; }
+    100% { box-shadow:0 0 24px rgba(124,77,255,.15); } }
+  @keyframes kirmiziParla {
+    0%   { box-shadow:0 0 0 rgba(255,82,82,0); }
+    35%  { box-shadow:0 0 32px rgba(255,82,82,.65); border-color:#ff5252; }
+    100% { box-shadow:0 0 24px rgba(124,77,255,.15); } }
+  @keyframes yesilFlas { 0% { background:rgba(105,240,174,.38); } 100% { background:transparent; } }
+  @keyframes kirmiziFlas { 0% { background:rgba(255,82,82,.38); } 100% { background:transparent; } }
+  @keyframes nabiz { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+  @keyframes baslikParla { 0%,100% { filter:drop-shadow(0 0 6px rgba(124,77,255,.5)); }
+                           50% { filter:drop-shadow(0 0 14px rgba(0,229,255,.6)); } }
+  @keyframes arkaPlan { 0%,100% { opacity:.75; } 50% { opacity:1; } }
+
+  /* Hareketi azalt ayarı açıksa animasyonları kapat */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation:none !important; transition:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -137,6 +208,26 @@
   // ---------- OYUN DEĞİŞKENLERİ ----------
   let stats, hafta, mod, kart, kartIndex, deste, sonKart, asama;
   // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
+
+  // ---------- EFEKTLER ----------
+  // Karta bir animasyon sınıfı verir (öncekileri temizleyip yeniden başlatır)
+  function efekt(sinif) {
+    const k = document.getElementById("kart");
+    k.classList.remove("giris", "efektBasari", "efektBasarisiz", "efektBitti");
+    void k.offsetWidth;   // animasyonun yeniden başlaması için gerekli
+    k.classList.add(sinif);
+  }
+
+  // Değişen göstergeyi yeşil/kırmızı yaktır
+  function gostergeFlas(onceki) {
+    for (const ad in stats) {
+      const kutu = document.getElementById(ad).parentElement.parentElement;
+      kutu.classList.remove("artti", "azaldi");
+      void kutu.offsetWidth;
+      if (stats[ad] > onceki[ad]) kutu.classList.add("artti");
+      else if (stats[ad] < onceki[ad]) kutu.classList.add("azaldi");
+    }
+  }
 
   // ---------- EKRAN YÖNETİMİ ----------
   function ekranGoster(ad) {
@@ -235,6 +326,7 @@
     asama = "soru";
     document.getElementById("kart").innerHTML =
       (uyari ? '<div class="uyari">' + uyari + "</div>" : "") + kart.metin;
+    efekt("giris");
     document.getElementById("btnA").textContent = kart.A.risk ? "🎲 " + kart.A.yazi : kart.A.yazi;
     document.getElementById("btnB").textContent = kart.B.risk ? "🎲 " + kart.B.yazi : kart.B.yazi;
     document.getElementById("btnB").style.display = "";
@@ -262,11 +354,12 @@
   function sec(secim) {
     const m = MODLAR[mod];
     const secenek = kart[secim];
-    let metin, etki, baslik = "";
+    let metin, etki, baslik = "", riskli = false, basarili = false;
 
     if (secenek.risk) {
       const sans = Math.min(0.9, Math.max(0.1, secenek.risk.sans + m.sans));
-      const basarili = Math.random() < sans;
+      basarili = Math.random() < sans;
+      riskli = true;
       const sonuc = basarili ? secenek.risk.basari : secenek.risk.basarisiz;
       baslik = basarili
         ? '<div class="basari">🎲 RİSK BAŞARILI!</div><br>'
@@ -286,17 +379,20 @@
       olcekli[ad] = d < 0 ? Math.round(d * carpan) : d;
     }
 
+    const onceki = Object.assign({}, stats);
     for (const ad in olcekli) {
       stats[ad] = sinirla(stats[ad] + olcekli[ad]);
     }
     // Haftalık gider
     stats.butce = sinirla(stats.butce - m.gider);
     ekraniGuncelle();
+    gostergeFlas(onceki);
 
     document.getElementById("kart").innerHTML =
       baslik + metin +
       '<div class="etki">' + etkiYazisi(olcekli) +
       '<span class="gider">🧾 Haftalık gider: 💰 Bütçe -' + m.gider + "</span></div>";
+    efekt(riskli ? (basarili ? "efektBasari" : "efektBasarisiz") : "giris");
     document.getElementById("btnA").textContent = "Devam";
     document.getElementById("btnB").style.display = "none";
     asama = "sonuc";
@@ -313,6 +409,7 @@
           "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " tükendi.<br>" +
           hafta + " hafta dayandın. Mod: " + MODLAR[mod].ad +
           " · Seviye: " + seviyeHesapla(hafta);
+        efekt("efektBitti");
         document.getElementById("btnA").textContent = "Yeniden Başla";
         document.getElementById("btnB").textContent = "Ana Menü";
         document.getElementById("btnB").style.display = "";
