@@ -12,9 +12,15 @@
   .stats { display:flex; gap:10px; margin-bottom:20px; }
   .stat { flex:1; text-align:center; font-size:13px; }
   .bar { height:10px; background:#252a44; border-radius:5px; margin-top:6px; overflow:hidden; }
-  .dolu { height:100%; background:#00e5ff; width:50%; transition:width .4s; }
+  .dolu { height:100%; background:#00e5ff; width:50%; transition:width .4s, background .4s; }
+  .dolu.tehlike { background:#ff5252; }
   #kart { background:#171b30; border:1px solid #2e3558; border-radius:12px;
-          padding:24px; min-height:120px; font-size:18px; line-height:1.5; }
+          padding:24px; min-height:140px; font-size:18px; line-height:1.5; }
+  .basari { color:#69f0ae; font-weight:bold; }
+  .basarisiz { color:#ff5252; font-weight:bold; }
+  .etki { margin-top:14px; font-size:15px; line-height:1.8; }
+  .art { color:#69f0ae; }
+  .azal { color:#ff8a80; }
   .butonlar { display:flex; gap:10px; margin-top:16px; }
   button { flex:1; padding:14px; font-size:15px; color:#fff; background:#7c4dff;
            border:none; border-radius:8px; cursor:pointer; }
@@ -42,87 +48,198 @@
 </div>
 
 <script>
-  // Göstergeler (0-100 arası). Herhangi biri 0 veya 100 olursa oyun biter.
-  let stats = { butce:50, form:50, taraftar:50, moral:50 };
-  let hafta = 1;
-  let kart = null;
+  // Göstergeler 0-100 arası. SADECE 0'a düşerse oyun biter. 100'de kalır.
+  const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
+  let stats, hafta, kart, deste, sonKart, asama;
+  // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
 
-  // Olay kartları: her seçimin göstergelere etkisi (+ artırır, - azaltır)
+  // Normal seçenek: { yazi, sonuc (açıklama), etki }
+  // Riskli seçenek: { yazi, risk:{ sans (0-1 arası), basari:{metin,etki}, basarisiz:{metin,etki} } }
   const kartlar = [
     { metin:"Rakip takım yıldız oyuncunu yüksek paraya transfer etmek istiyor.",
-      A:{ yazi:"Sat",       etki:{ butce:+20, moral:-15, form:-10 } },
-      B:{ yazi:"Reddet",    etki:{ butce:-5,  moral:+15, form:+5 } } },
-    { metin:"Ünlü bir yayıncı seni sponsor etmek istiyor ama takımın antrenman saatleri kısalacak.",
-      A:{ yazi:"Kabul et",  etki:{ butce:+15, taraftar:+10, form:-15 } },
-      B:{ yazi:"Reddet",    etki:{ butce:-5,  form:+10 } } },
+      A:{ yazi:"Sat", sonuc:"Oyuncuyu sattın. Kasa doldu ama takımda huzursuzluk var.",
+          etki:{ butce:+20, moral:-15, form:-10 } },
+      B:{ yazi:"Reddet", sonuc:"Oyuncu kalıyor. Takım senin arkanda.",
+          etki:{ butce:-5, moral:+15, form:+5 } } },
+
+    { metin:"Ünlü bir yayıncı seni sponsor etmek istiyor ama antrenman saatleri kısalacak.",
+      A:{ yazi:"Kabul et", sonuc:"Sponsorluk anlaşması imzalandı. Para var ama antrenman azaldı.",
+          etki:{ butce:+15, taraftar:+10, form:-15 } },
+      B:{ yazi:"Reddet", sonuc:"Antrenman programı korundu.",
+          etki:{ butce:-5, form:+10 } } },
+
     { metin:"Takım kaptanı sosyal medyada hakeme küfretti. Taraftarlar tepkili.",
-      A:{ yazi:"Cezalandır",etki:{ moral:-15, taraftar:+15 } },
-      B:{ yazi:"Savun",     etki:{ moral:+15, taraftar:-15 } } },
-    { metin:"Büyük final öncesi koç, riskli bir taktik denemek istiyor.",
-      A:{ yazi:"Onayla",    etki:{ form:+20, moral:-5, butce:-5 } },
-      B:{ yazi:"Güvenli oyna", etki:{ form:-10, moral:+10 } } },
+      A:{ yazi:"Cezalandır", sonuc:"Kaptan cezalandırıldı. Taraftar memnun, oyuncular küstü.",
+          etki:{ moral:-15, taraftar:+15 } },
+      B:{ yazi:"Savun", sonuc:"Kaptanı savundun. Takım mutlu ama taraftar kızgın.",
+          etki:{ moral:+15, taraftar:-15 } } },
+
+    { metin:"Büyük final öncesi koç, çok riskli bir taktik denemek istiyor.",
+      A:{ yazi:"Riski al", risk:{ sans:0.5,
+          basari:{ metin:"Taktik harika tuttu! Rakip şaşkına döndü.",
+                   etki:{ form:+25, taraftar:+10 } },
+          basarisiz:{ metin:"Taktik ters tepti. Maçı berbat kaybettiniz.",
+                      etki:{ form:-20, moral:-10, taraftar:-5 } } } },
+      B:{ yazi:"Güvenli oyna", sonuc:"Bildiğiniz taktikle oynadınız. Sakin ama heyecansız bir maç.",
+          etki:{ form:-5, moral:+10 } } },
+
     { metin:"Taraftarlar bootcamp (kamp) için bağış kampanyası başlatmak istiyor.",
-      A:{ yazi:"Destekle",  etki:{ butce:+10, taraftar:+10, moral:-5 } },
-      B:{ yazi:"Gerek yok", etki:{ taraftar:-15, moral:+5 } } }
+      A:{ yazi:"Destekle", sonuc:"Kampanya iyi gitti. Hem para hem sevgi geldi.",
+          etki:{ butce:+10, taraftar:+10, moral:-5 } },
+      B:{ yazi:"Gerek yok", sonuc:"Taraftar kırıldı ama takım rahat.",
+          etki:{ taraftar:-15, moral:+5 } } },
+
+    { metin:"Bilinmeyen genç bir yetenek deneme istiyor. Ya süper yıldız çıkar ya da boşa gider.",
+      A:{ yazi:"Şansını dene", risk:{ sans:0.4,
+          basari:{ metin:"Genç oyuncu müthiş çıktı! Takıma taze kan geldi.",
+                   etki:{ form:+20, taraftar:+10, moral:+5 } },
+          basarisiz:{ metin:"Oyuncu baskıya dayanamadı, para boşa gitti.",
+                      etki:{ butce:-15, moral:-5 } } } },
+      B:{ yazi:"Geri çevir", sonuc:"Yeteneği geri çevirdin. Her şey olduğu gibi kaldı.",
+          etki:{ moral:+5, butce:+5 } } },
+
+    { metin:"Takım yayıncı oyuncun canlı yayında kötü oynayınca izleyiciler dalga geçti.",
+      A:{ yazi:"Yayını kısıtla", sonuc:"Yayınlar azaldı. Oyuncu rahatladı ama izleyici sayısı düştü.",
+          etki:{ taraftar:-10, form:+10 } },
+      B:{ yazi:"Yayına devam", sonuc:"Yayınlar devam ediyor. İzleyici artıyor ama oyuncu stresli.",
+          etki:{ taraftar:+10, moral:-10 } } },
+
+    { metin:"Rakip takımın koçu gizlice sana koçluk teklifi yapıyor.",
+      A:{ yazi:"Koçu al", risk:{ sans:0.5,
+          basari:{ metin:"Yeni koç harika! Takım uçuşa geçti.",
+                   etki:{ form:+20, moral:+10, butce:-10 } },
+          basarisiz:{ metin:"Yeni koç takımla uyuşamadı. Büyük kargaşa çıktı.",
+                      etki:{ moral:-20, butce:-15 } } } },
+      B:{ yazi:"Reddet", sonuc:"Teklifi geri çevirdin. Takım düzeni bozulmadı.",
+          etki:{ moral:+5 } } },
+
+    { metin:"Oyuncular hafta sonu tatil istiyor. Ama önümüzde önemli bir maç var.",
+      A:{ yazi:"Tatil ver", sonuc:"Oyuncular dinlendi, mutlular. Ama hazırlık eksik kaldı.",
+          etki:{ moral:+20, form:-10, butce:-5 } },
+      B:{ yazi:"Çalıştır", sonuc:"Kamp devam etti. Hazırlık iyi ama oyuncular yorgun.",
+          etki:{ form:+15, moral:-15 } } },
+
+    { metin:"Büyük bir enerji içeceği markası sponsorluk için masaya oturdu. Ama taraftarlar bu markayı sevmiyor.",
+      A:{ yazi:"İmzala", sonuc:"Para kasaya aktı ama taraftar homurdandı.",
+          etki:{ butce:+25, taraftar:-15 } },
+      B:{ yazi:"Reddet", sonuc:"Taraftar bu kararı sevdi ama kasa boş kaldı.",
+          etki:{ butce:-5, taraftar:+10 } } }
   ];
 
   function sinirla(x) { return Math.max(0, Math.min(100, x)); }
 
   function ekraniGuncelle() {
     for (const ad in stats) {
-      document.getElementById(ad).style.width = stats[ad] + "%";
+      const bar = document.getElementById(ad);
+      bar.style.width = stats[ad] + "%";
+      bar.classList.toggle("tehlike", stats[ad] <= 20);
     }
     document.getElementById("sayac").textContent = "Hafta: " + hafta;
   }
 
+  // Desteyi karıştırır; aynı kart arka arkaya gelmesin diye kontrol eder
+  function desteyiKaristir() {
+    const d = kartlar.map((_, i) => i);
+    for (let i = d.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [d[i], d[j]] = [d[j], d[i]];
+    }
+    // Çekilecek kart (listenin sonu) bir önceki kartla aynıysa yer değiştir
+    if (d[d.length - 1] === sonKart && d.length > 1) {
+      [d[d.length - 1], d[0]] = [d[0], d[d.length - 1]];
+    }
+    return d;
+  }
+
   function yeniKart() {
-    kart = kartlar[Math.floor(Math.random() * kartlar.length)];
+    if (deste.length === 0) deste = desteyiKaristir();
+    const index = deste.pop();
+    sonKart = index;
+    kart = kartlar[index];
+    asama = "soru";
     document.getElementById("kart").textContent = kart.metin;
-    document.getElementById("btnA").textContent = kart.A.yazi;
-    document.getElementById("btnB").textContent = kart.B.yazi;
+    document.getElementById("btnA").textContent = kart.A.risk ? "🎲 " + kart.A.yazi : kart.A.yazi;
+    document.getElementById("btnB").textContent = kart.B.risk ? "🎲 " + kart.B.yazi : kart.B.yazi;
+    document.getElementById("btnB").style.display = "";
+  }
+
+  function etkiYazisi(etki) {
+    let html = "";
+    for (const ad in etki) {
+      const d = etki[ad];
+      const sinif = d > 0 ? "art" : "azal";
+      const isaret = d > 0 ? "+" : "";
+      html += '<span class="' + sinif + '">' + isimler[ad] + " " + isaret + d + "</span><br>";
+    }
+    return html;
   }
 
   function sec(secim) {
-    const etki = kart[secim].etki;
+    const secenek = kart[secim];
+    let metin, etki, baslik = "";
+
+    if (secenek.risk) {
+      const basarili = Math.random() < secenek.risk.sans;
+      const sonuc = basarili ? secenek.risk.basari : secenek.risk.basarisiz;
+      baslik = basarili
+        ? '<div class="basari">🎲 RİSK BAŞARILI!</div><br>'
+        : '<div class="basarisiz">🎲 RİSK BAŞARISIZ!</div><br>';
+      metin = sonuc.metin;
+      etki = sonuc.etki;
+    } else {
+      metin = secenek.sonuc;
+      etki = secenek.etki;
+    }
+
     for (const ad in etki) {
       stats[ad] = sinirla(stats[ad] + etki[ad]);
     }
-    hafta++;
     ekraniGuncelle();
-    if (oyunBittiMi()) return;
-    yeniKart();
+
+    document.getElementById("kart").innerHTML =
+      baslik + metin + '<div class="etki">' + etkiYazisi(etki) + "</div>";
+    document.getElementById("btnA").textContent = "Devam";
+    document.getElementById("btnB").style.display = "none";
+    asama = "sonuc";
   }
 
-  function oyunBittiMi() {
-    const isimler = { butce:"Bütçe", form:"Form", taraftar:"Taraftar", moral:"Moral" };
+  function devam() {
+    // Sadece bir gösterge 0'a düştüyse oyun biter
     for (const ad in stats) {
-      if (stats[ad] <= 0 || stats[ad] >= 100) {
-        const durum = stats[ad] <= 0 ? "tükendi" : "kontrolden çıktı";
+      if (stats[ad] <= 0) {
+        asama = "bitti";
         document.getElementById("kart").innerHTML =
-          "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " " + durum +
-          ".<br>" + (hafta - 1) + " hafta dayanabildin.";
+          "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " tükendi.<br>" +
+          hafta + " hafta dayanabildin.";
         document.getElementById("btnA").textContent = "Yeniden Başla";
         document.getElementById("btnB").style.display = "none";
-        document.getElementById("btnA").onclick = yenidenBasla;
-        return true;
+        return;
       }
     }
-    return false;
+    hafta++;
+    ekraniGuncelle();
+    yeniKart();
   }
 
   function yenidenBasla() {
     stats = { butce:50, form:50, taraftar:50, moral:50 };
     hafta = 1;
-    document.getElementById("btnB").style.display = "";
-    document.getElementById("btnA").onclick = () => sec("A");
+    deste = [];
+    sonKart = -1;
     ekraniGuncelle();
     yeniKart();
   }
 
-  document.getElementById("btnA").onclick = () => sec("A");
-  document.getElementById("btnB").onclick = () => sec("B");
-  ekraniGuncelle();
-  yeniKart();
+  document.getElementById("btnA").onclick = function () {
+    if (asama === "soru") sec("A");
+    else if (asama === "sonuc") devam();
+    else yenidenBasla();
+  };
+  document.getElementById("btnB").onclick = function () {
+    if (asama === "soru") sec("B");
+  };
+
+  yenidenBasla();
 </script>
 </body>
 </html>
