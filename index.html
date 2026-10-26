@@ -3,17 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Espor Menajer</title>
+<title>Kritik Seçim Espor</title>
 <style>
   body { background:#0d0f1a; color:#e8eaf6; font-family:Arial,sans-serif;
          margin:0; display:flex; justify-content:center; padding:20px; }
   #oyun { width:100%; max-width:480px; }
-  h1 { text-align:center; color:#7c4dff; margin:0 0 20px; }
+  h1 { text-align:center; color:#7c4dff; margin:0 0 20px; font-size:26px; }
+  h2 { text-align:center; margin:0 0 16px; font-size:20px; }
+  .ekran { display:none; }
+  .ekran.aktif { display:block; }
+
   .stats { display:flex; gap:10px; margin-bottom:20px; }
   .stat { flex:1; text-align:center; font-size:13px; }
   .bar { height:10px; background:#252a44; border-radius:5px; margin-top:6px; overflow:hidden; }
   .dolu { height:100%; background:#00e5ff; width:50%; transition:width .4s, background .4s; }
   .dolu.tehlike { background:#ff5252; }
+
   #kart { background:#171b30; border:1px solid #2e3558; border-radius:12px;
           padding:24px; min-height:140px; font-size:18px; line-height:1.5; }
   .basari { color:#69f0ae; font-weight:bold; }
@@ -23,50 +28,179 @@
   .art { color:#69f0ae; }
   .azal { color:#ff8a80; }
   .gider { color:#8a90b8; }
+
   .butonlar { display:flex; gap:10px; margin-top:16px; }
   button { flex:1; padding:14px; font-size:15px; color:#fff; background:#7c4dff;
            border:none; border-radius:8px; cursor:pointer; }
   button:hover { background:#9e7bff; }
+  button:disabled { opacity:.35; cursor:default; }
+  button:disabled:hover { background:#7c4dff; }
+  button.ikincil { background:#252a44; }
+  button.ikincil:hover { background:#323a60; }
+
+  .menu-liste { display:flex; flex-direction:column; gap:12px; }
+  .menu-liste button { flex:none; padding:18px; font-size:17px; }
+  .menu-liste small { display:block; margin-top:4px; font-size:12px; opacity:.8; }
+
+  .mod-btn { text-align:left; }
+  .mod-btn b { font-size:18px; }
+
   #sayac { text-align:center; margin-top:16px; color:#8a90b8; font-size:14px; }
   #tehlikeYazi { text-align:center; margin-top:8px; color:#ff5252; font-size:14px; font-weight:bold; min-height:18px; }
+
+  .menu-kucuk { flex:none; width:auto; padding:8px 14px; font-size:13px; margin-bottom:14px; }
+
+  textarea { width:100%; box-sizing:border-box; min-height:140px; padding:12px; font-size:16px;
+             background:#171b30; color:#e8eaf6; border:1px solid #2e3558; border-radius:8px;
+             font-family:Arial,sans-serif; }
+  .not { color:#8a90b8; font-size:13px; line-height:1.5; margin-top:12px; text-align:center; }
 </style>
 </head>
 <body>
 <div id="oyun">
-  <h1>ESPOR MENAJER</h1>
+  <h1>KRİTİK SEÇİM ESPOR</h1>
 
-  <div class="stats">
-    <div class="stat">💰 Bütçe<div class="bar"><div class="dolu" id="butce"></div></div></div>
-    <div class="stat">🏆 Form<div class="bar"><div class="dolu" id="form"></div></div></div>
-    <div class="stat">📣 Taraftar<div class="bar"><div class="dolu" id="taraftar"></div></div></div>
-    <div class="stat">🧠 Moral<div class="bar"><div class="dolu" id="moral"></div></div></div>
+  <!-- ANA MENÜ -->
+  <div id="ekranMenu" class="ekran">
+    <div class="menu-liste">
+      <button id="btnDevamEt"></button>
+      <button id="btnYeniOyun">🎮 Yeni Oyun</button>
+      <button id="btnGeriBildirim" class="ikincil">💬 Geri Bildirim</button>
+    </div>
   </div>
 
-  <div id="kart"></div>
-  <div class="butonlar">
-    <button id="btnA"></button>
-    <button id="btnB"></button>
+  <!-- MOD SEÇİMİ -->
+  <div id="ekranMod" class="ekran">
+    <h2>Zorluk Seç</h2>
+    <div class="menu-liste">
+      <button class="mod-btn" id="modOrta"><b>Orta</b><small>Daha rahat. Giderler düşük, zorluk yavaş artar.</small></button>
+      <button class="mod-btn" id="modZor"><b>Zor</b><small>Dengeli ve zorlu. Standart deneyim.</small></button>
+      <button class="mod-btn" id="modCokZor"><b>Çok Zor</b><small>Acımasız. Yüksek gider, hızlı zorluk, düşük şans.</small></button>
+      <button class="ikincil" id="btnModGeri">← Geri</button>
+    </div>
   </div>
-  <div id="sayac"></div>
-  <div id="tehlikeYazi"></div>
+
+  <!-- GERİ BİLDİRİM -->
+  <div id="ekranGeriBildirim" class="ekran">
+    <h2>Geri Bildirim</h2>
+    <textarea id="geriBildirimMetin" placeholder="Fikirlerini, hataları veya önerilerini yaz..."></textarea>
+    <div class="menu-liste" style="margin-top:12px;">
+      <button id="btnGonder">📧 E-posta ile Gönder</button>
+      <button class="ikincil" id="btnGeriBildirimGeri">← Geri</button>
+    </div>
+    <div class="not">Butona basınca e-posta uygulaman açılır.<br>
+      Açılmazsa mesajını şu adrese kendin gönderebilirsin:<br>
+      <b>kritiksecimespor@gmail.com</b></div>
+  </div>
+
+  <!-- OYUN EKRANI -->
+  <div id="ekranOyun" class="ekran">
+    <button class="menu-kucuk ikincil" id="btnMenu">☰ Menü</button>
+
+    <div class="stats">
+      <div class="stat">💰 Bütçe<div class="bar"><div class="dolu" id="butce"></div></div></div>
+      <div class="stat">🏆 Form<div class="bar"><div class="dolu" id="form"></div></div></div>
+      <div class="stat">📣 Taraftar<div class="bar"><div class="dolu" id="taraftar"></div></div></div>
+      <div class="stat">🧠 Moral<div class="bar"><div class="dolu" id="moral"></div></div></div>
+    </div>
+
+    <div id="kart"></div>
+    <div class="butonlar">
+      <button id="btnA"></button>
+      <button id="btnB"></button>
+    </div>
+    <div id="sayac"></div>
+    <div id="tehlikeYazi"></div>
+  </div>
 </div>
 
 <!-- Kartlar ayrı dosyadan yüklenir -->
 <script src="kartlar.js"></script>
 
 <script>
-  // Göstergeler 0-100 arası. SADECE 0'a düşerse oyun biter. 100'de kalır.
+  // ---------- AYARLAR ----------
+  const EPOSTA = "kritiksecimespor@gmail.com";
+  const KAYIT_ANAHTARI = "kritikSecimEsporKayit";
   const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
-  const HAFTALIK_GIDER = 2;   // Her hafta bütçeden düşen miktar
-  let stats, hafta, kart, deste, sonKart, asama;
+
+  // Zorluk modları. "zor" oyunun önceki haliyle aynıdır.
+  // gider: haftalık bütçe gideri | taban: olumsuz etki çarpanı (başlangıç)
+  // seviyeHafta: kaç haftada bir seviye atlanır | artis: seviye başına çarpan artışı
+  // max: çarpan üst sınırı | baslangic: göstergelerin başlangıç değeri
+  // sans: 🎲 risk şansına eklenen değer
+  const MODLAR = {
+    orta:   { ad:"Orta",    gider:1, taban:0.8,  seviyeHafta:7, artis:0.05, max:1.5, baslangic:55, sans:+0.1 },
+    zor:    { ad:"Zor",     gider:2, taban:1.0,  seviyeHafta:5, artis:0.10, max:2.0, baslangic:50, sans:0 },
+    cokzor: { ad:"Çok Zor", gider:3, taban:1.15, seviyeHafta:4, artis:0.15, max:2.5, baslangic:45, sans:-0.1 }
+  };
+
+  // ---------- OYUN DEĞİŞKENLERİ ----------
+  let stats, hafta, mod, kart, kartIndex, deste, sonKart, asama;
   // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
 
-  // Seviye: her 5 haftada bir artar. Olumsuz etkiler her seviyede %10 büyür (en fazla 2 kat).
-  function seviyeHesapla(h) { return Math.floor((h - 1) / 5) + 1; }
-  function carpanHesapla(h) { return Math.min(2, 1 + 0.1 * (seviyeHesapla(h) - 1)); }
+  // ---------- EKRAN YÖNETİMİ ----------
+  function ekranGoster(ad) {
+    const ekranlar = ["ekranMenu", "ekranMod", "ekranGeriBildirim", "ekranOyun"];
+    ekranlar.forEach(function (e) {
+      document.getElementById(e).classList.toggle("aktif", e === ad);
+    });
+  }
+
+  // ---------- KAYIT (telefonda saklanır) ----------
+  function kaydet() {
+    try {
+      localStorage.setItem(KAYIT_ANAHTARI, JSON.stringify({
+        stats: stats, hafta: hafta, mod: mod, deste: deste,
+        sonKart: sonKart, kartIndex: kartIndex, asama: asama
+      }));
+    } catch (e) {}
+  }
+
+  function kayitOku() {
+    try {
+      const v = localStorage.getItem(KAYIT_ANAHTARI);
+      if (!v) return null;
+      const k = JSON.parse(v);
+      if (!k || !MODLAR[k.mod] || !k.stats || typeof k.hafta !== "number") return null;
+      if (typeof k.kartIndex !== "number" || k.kartIndex < 0 || k.kartIndex >= kartlar.length) return null;
+      return k;
+    } catch (e) { return null; }
+  }
+
+  function kayitSil() {
+    try { localStorage.removeItem(KAYIT_ANAHTARI); } catch (e) {}
+  }
+
+  // ---------- ANA MENÜ ----------
+  function menuyuGuncelle() {
+    const k = kayitOku();
+    const btn = document.getElementById("btnDevamEt");
+    if (k) {
+      btn.disabled = false;
+      btn.innerHTML = "▶️ Devam Et<small>" + MODLAR[k.mod].ad + " · Hafta " + k.hafta + "</small>";
+    } else {
+      btn.disabled = true;
+      btn.innerHTML = "▶️ Devam Et<small>Kayıtlı oyun yok</small>";
+    }
+  }
+
+  function menuyeDon() {
+    menuyuGuncelle();
+    ekranGoster("ekranMenu");
+  }
+
+  // ---------- ZORLUK HESAPLARI ----------
+  function seviyeHesapla(h) {
+    return Math.floor((h - 1) / MODLAR[mod].seviyeHafta) + 1;
+  }
+  function carpanHesapla(h) {
+    const m = MODLAR[mod];
+    return Math.min(m.max, m.taban + m.artis * (seviyeHesapla(h) - 1));
+  }
 
   function sinirla(x) { return Math.max(0, Math.min(100, x)); }
 
+  // ---------- OYUN EKRANI ----------
   function ekraniGuncelle() {
     const tehlikeli = [];
     for (const ad in stats) {
@@ -77,14 +211,14 @@
       if (tehlikede) tehlikeli.push(isimler[ad]);
     }
     document.getElementById("sayac").textContent =
-      "Hafta: " + hafta + "  ·  Seviye: " + seviyeHesapla(hafta);
+      MODLAR[mod].ad + "  ·  Hafta: " + hafta + "  ·  Seviye: " + seviyeHesapla(hafta);
     document.getElementById("tehlikeYazi").textContent =
       tehlikeli.length > 0 ? "⚠️ Tehlikede: " + tehlikeli.join(", ") : "";
   }
 
   // Desteyi karıştırır; aynı kart arka arkaya gelmesin diye kontrol eder
   function desteyiKaristir() {
-    const d = kartlar.map((_, i) => i);
+    const d = kartlar.map(function (_, i) { return i; });
     for (let i = d.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [d[i], d[j]] = [d[j], d[i]];
@@ -95,10 +229,8 @@
     return d;
   }
 
-  function yeniKart(uyari) {
-    if (deste.length === 0) deste = desteyiKaristir();
-    const index = deste.pop();
-    sonKart = index;
+  function kartiGoster(index, uyari) {
+    kartIndex = index;
     kart = kartlar[index];
     asama = "soru";
     document.getElementById("kart").innerHTML =
@@ -106,6 +238,14 @@
     document.getElementById("btnA").textContent = kart.A.risk ? "🎲 " + kart.A.yazi : kart.A.yazi;
     document.getElementById("btnB").textContent = kart.B.risk ? "🎲 " + kart.B.yazi : kart.B.yazi;
     document.getElementById("btnB").style.display = "";
+  }
+
+  function yeniKart(uyari) {
+    if (deste.length === 0) deste = desteyiKaristir();
+    const index = deste.pop();
+    sonKart = index;
+    kartiGoster(index, uyari);
+    kaydet();
   }
 
   function etkiYazisi(etki) {
@@ -120,11 +260,13 @@
   }
 
   function sec(secim) {
+    const m = MODLAR[mod];
     const secenek = kart[secim];
     let metin, etki, baslik = "";
 
     if (secenek.risk) {
-      const basarili = Math.random() < secenek.risk.sans;
+      const sans = Math.min(0.9, Math.max(0.1, secenek.risk.sans + m.sans));
+      const basarili = Math.random() < sans;
       const sonuc = basarili ? secenek.risk.basari : secenek.risk.basarisiz;
       baslik = basarili
         ? '<div class="basari">🎲 RİSK BAŞARILI!</div><br>'
@@ -136,7 +278,7 @@
       etki = secenek.etki;
     }
 
-    // Zorluk: olumsuz etkiler seviyeye göre büyür
+    // Zorluk: olumsuz etkiler moda ve seviyeye göre büyür/küçülür
     const carpan = carpanHesapla(hafta);
     const olcekli = {};
     for (const ad in etki) {
@@ -148,16 +290,17 @@
       stats[ad] = sinirla(stats[ad] + olcekli[ad]);
     }
     // Haftalık gider
-    stats.butce = sinirla(stats.butce - HAFTALIK_GIDER);
+    stats.butce = sinirla(stats.butce - m.gider);
     ekraniGuncelle();
 
     document.getElementById("kart").innerHTML =
       baslik + metin +
       '<div class="etki">' + etkiYazisi(olcekli) +
-      '<span class="gider">🧾 Haftalık gider: 💰 Bütçe -' + HAFTALIK_GIDER + "</span></div>";
+      '<span class="gider">🧾 Haftalık gider: 💰 Bütçe -' + m.gider + "</span></div>";
     document.getElementById("btnA").textContent = "Devam";
     document.getElementById("btnB").style.display = "none";
     asama = "sonuc";
+    kaydet();
   }
 
   function devam() {
@@ -165,45 +308,102 @@
     for (const ad in stats) {
       if (stats[ad] <= 0) {
         asama = "bitti";
+        kayitSil();
         document.getElementById("kart").innerHTML =
           "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " tükendi.<br>" +
-          hafta + " hafta dayandın. Seviye: " + seviyeHesapla(hafta);
+          hafta + " hafta dayandın. Mod: " + MODLAR[mod].ad +
+          " · Seviye: " + seviyeHesapla(hafta);
         document.getElementById("btnA").textContent = "Yeniden Başla";
-        document.getElementById("btnB").style.display = "none";
+        document.getElementById("btnB").textContent = "Ana Menü";
+        document.getElementById("btnB").style.display = "";
         return;
       }
     }
     const eskiSeviye = seviyeHesapla(hafta);
+    const eskiCarpan = carpanHesapla(hafta);
     hafta++;
     const yeniSeviye = seviyeHesapla(hafta);
     let uyari = "";
     if (yeniSeviye > eskiSeviye) {
-      const yuzde = Math.round((carpanHesapla(hafta) - 1) * 100);
-      uyari = "⚠️ SEVİYE " + yeniSeviye + ": Olumsuz etkiler %" + yuzde + " arttı!";
+      const yuzde = Math.round((carpanHesapla(hafta) / eskiCarpan - 1) * 100);
+      uyari = yuzde > 0
+        ? "⚠️ SEVİYE " + yeniSeviye + ": Olumsuz etkiler %" + yuzde + " arttı!"
+        : "⚠️ SEVİYE " + yeniSeviye + ": Zorluk en üst sınırda!";
     }
     ekraniGuncelle();
     yeniKart(uyari);
   }
 
-  function yenidenBasla() {
-    stats = { butce:50, form:50, taraftar:50, moral:50 };
+  // ---------- OYUN BAŞLAT / DEVAM ----------
+  function yeniOyunBaslat(modAdi) {
+    mod = modAdi;
+    const b = MODLAR[mod].baslangic;
+    stats = { butce:b, form:b, taraftar:b, moral:b };
     hafta = 1;
     deste = [];
     sonKart = -1;
+    ekranGoster("ekranOyun");
     ekraniGuncelle();
     yeniKart();
   }
 
+  function devamEt() {
+    const k = kayitOku();
+    if (!k) return;
+    stats = k.stats;
+    hafta = k.hafta;
+    mod = k.mod;
+    sonKart = k.sonKart;
+    deste = (k.deste || []).filter(function (i) { return i >= 0 && i < kartlar.length; });
+    ekranGoster("ekranOyun");
+    ekraniGuncelle();
+    if (k.asama === "sonuc") {
+      devam();               // sonuç ekranındayken çıkıldıysa bir sonraki karta geç
+    } else {
+      kartiGoster(k.kartIndex);
+    }
+  }
+
+  // ---------- GERİ BİLDİRİM ----------
+  function geriBildirimGonder() {
+    const metin = document.getElementById("geriBildirimMetin").value.trim();
+    const konu = "Kritik Seçim Espor - Geri Bildirim";
+    const govde = (metin || "") + "\n\n(Oyun: Kritik Seçim Espor)";
+    window.location.href = "mailto:" + EPOSTA +
+      "?subject=" + encodeURIComponent(konu) +
+      "&body=" + encodeURIComponent(govde);
+  }
+
+  // ---------- BUTON BAĞLANTILARI ----------
+  document.getElementById("btnDevamEt").onclick = devamEt;
+  document.getElementById("btnYeniOyun").onclick = function () {
+    if (kayitOku() && !confirm("Kayıtlı oyunun silinecek. Yeni oyun başlatılsın mı?")) return;
+    ekranGoster("ekranMod");
+  };
+  document.getElementById("btnGeriBildirim").onclick = function () { ekranGoster("ekranGeriBildirim"); };
+
+  document.getElementById("modOrta").onclick = function () { yeniOyunBaslat("orta"); };
+  document.getElementById("modZor").onclick = function () { yeniOyunBaslat("zor"); };
+  document.getElementById("modCokZor").onclick = function () { yeniOyunBaslat("cokzor"); };
+  document.getElementById("btnModGeri").onclick = menuyeDon;
+
+  document.getElementById("btnGonder").onclick = geriBildirimGonder;
+  document.getElementById("btnGeriBildirimGeri").onclick = menuyeDon;
+
+  document.getElementById("btnMenu").onclick = menuyeDon;
+
   document.getElementById("btnA").onclick = function () {
     if (asama === "soru") sec("A");
     else if (asama === "sonuc") devam();
-    else yenidenBasla();
+    else yeniOyunBaslat(mod);       // oyun bitti: aynı modda yeniden başla
   };
   document.getElementById("btnB").onclick = function () {
     if (asama === "soru") sec("B");
+    else if (asama === "bitti") menuyeDon();
   };
 
-  yenidenBasla();
+  // ---------- AÇILIŞ ----------
+  menuyeDon();
 </script>
 </body>
 </html>
