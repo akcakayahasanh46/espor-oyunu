@@ -1,4 +1,4 @@
-// ESPOR MENAJER - KARTLAR
+// ESPOR MENAJER - KARTLAR (50 kart)
 // Yeni kart eklemek için bir kartı kopyala, virgülle ayır, metinleri değiştir.
 // Normal seçenek: { yazi, sonuc, etki }
 // Riskli seçenek: { yazi, risk:{ sans, basari:{metin,etki}, basarisiz:{metin,etki} } }
@@ -73,8 +73,6 @@ const kartlar = [
     B:{ yazi:"Reddet", sonuc:"Taraftar bu kararı sevdi ama kasa boş kaldı.",
         etki:{ butce:-5, taraftar:+10 } } },
 
-  // ---- YENİ KARTLAR ----
-
   { metin:"Turnuva organizatörü maç saatini son dakika değiştirdi. Takım uykusuz.",
     A:{ yazi:"İtiraz et", risk:{ sans:0.4,
         basari:{ metin:"İtiraz kabul edildi! Saat eski haline döndü.",
@@ -144,32 +142,4 @@ const kartlar = [
     B:{ yazi:"Eskisiyle devam", sonuc:"Kopmalar sürdü, oyuncular sinirli.",
         etki:{ form:-10, moral:-5 } } },
 
-  { metin:"Ünlü bir yayıncı takımına şovmaç meydan okuması yolladı.",
-    A:{ yazi:"Kabul et", risk:{ sans:0.5,
-        basari:{ metin:"Şovmaçı kazandınız! Sosyal medya patladı.",
-                 etki:{ taraftar:+20, moral:+10 } },
-        basarisiz:{ metin:"Şovmaçı kaybettiniz. Dalga geçildi.",
-                    etki:{ taraftar:-15, moral:-10 } } } },
-    B:{ yazi:"Reddet", sonuc:"Meydan okumayı geçtin. Sessiz bir hafta.",
-        etki:{ taraftar:-5, moral:+5 } } },
-
-  { metin:"Takım psikoloğu moral için destek programı öneriyor.",
-    A:{ yazi:"Psikolog tut", sonuc:"Oyuncular rahatladı, moral yükseldi.",
-        etki:{ butce:-10, moral:+20 } },
-    B:{ yazi:"Gerek yok", sonuc:"Tasarruf ettin ama gerginlik arttı.",
-        etki:{ butce:+5, moral:-10 } } },
-
-  { metin:"Takımın forması 3 yıldır aynı. Taraftarlar yenilik bekliyor.",
-    A:{ yazi:"Yeni forma çıkar", sonuc:"Yeni forma çok satıldı ama üretim masraflı oldu.",
-        etki:{ butce:-10, taraftar:+15 } },
-    B:{ yazi:"Eski kalsın", sonuc:"Masraf yok ama taraftar sıkıldı.",
-        etki:{ butce:+5, taraftar:-5 } } },
-
-  { metin:"Oyun güncellemesiyle meta tamamen değişti. Eski taktikler çalışmıyor.",
-    A:{ yazi:"Hemen uyum sağla", sonuc:"Yoğun çalıştınız. Takım yeni metaya adapte oldu.",
-        etki:{ form:+10, moral:-10, butce:-5 } },
-    B:{ yazi:"Bekle ve gör", sonuc:"Rakipler önünüze geçti.",
-        etki:{ form:-15, moral:+5 } } },
-
-  { metin:"Eski bir efsane oyuncu emekliliği bırakıp geri dönmek istiyor.",
-    A:{ yazi:"Tak
+  { metin:"Ünlü bir yayıncı takımına şovmaç meydan okuması
