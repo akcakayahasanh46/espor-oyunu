@@ -51,6 +51,9 @@
   <div id="tehlikeYazi"></div>
 </div>
 
+<!-- Kartlar ayrı dosyadan yüklenir -->
+<script src="kartlar.js"></script>
+
 <script>
   // Göstergeler 0-100 arası. SADECE 0'a düşerse oyun biter. 100'de kalır.
   const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
@@ -61,77 +64,6 @@
   // Seviye: her 5 haftada bir artar. Olumsuz etkiler her seviyede %10 büyür (en fazla 2 kat).
   function seviyeHesapla(h) { return Math.floor((h - 1) / 5) + 1; }
   function carpanHesapla(h) { return Math.min(2, 1 + 0.1 * (seviyeHesapla(h) - 1)); }
-
-  const kartlar = [
-    { metin:"Rakip takım yıldız oyuncunu yüksek paraya transfer etmek istiyor.",
-      A:{ yazi:"Sat", sonuc:"Oyuncuyu sattın. Kasa doldu ama takımda huzursuzluk var.",
-          etki:{ butce:+20, moral:-15, form:-10 } },
-      B:{ yazi:"Reddet", sonuc:"Oyuncu kalıyor. Takım senin arkanda.",
-          etki:{ butce:-5, moral:+15, form:+5 } } },
-
-    { metin:"Ünlü bir yayıncı seni sponsor etmek istiyor ama antrenman saatleri kısalacak.",
-      A:{ yazi:"Kabul et", sonuc:"Sponsorluk anlaşması imzalandı. Para var ama antrenman azaldı.",
-          etki:{ butce:+15, taraftar:+10, form:-15 } },
-      B:{ yazi:"Reddet", sonuc:"Antrenman programı korundu.",
-          etki:{ butce:-5, form:+10 } } },
-
-    { metin:"Takım kaptanı sosyal medyada hakeme küfretti. Taraftarlar tepkili.",
-      A:{ yazi:"Cezalandır", sonuc:"Kaptan cezalandırıldı. Taraftar memnun, oyuncular küstü.",
-          etki:{ moral:-15, taraftar:+15 } },
-      B:{ yazi:"Savun", sonuc:"Kaptanı savundun. Takım mutlu ama taraftar kızgın.",
-          etki:{ moral:+15, taraftar:-15 } } },
-
-    { metin:"Büyük final öncesi koç, çok riskli bir taktik denemek istiyor.",
-      A:{ yazi:"Riski al", risk:{ sans:0.5,
-          basari:{ metin:"Taktik harika tuttu! Rakip şaşkına döndü.",
-                   etki:{ form:+25, taraftar:+10 } },
-          basarisiz:{ metin:"Taktik ters tepti. Maçı berbat kaybettiniz.",
-                      etki:{ form:-20, moral:-10, taraftar:-5 } } } },
-      B:{ yazi:"Güvenli oyna", sonuc:"Bildiğiniz taktikle oynadınız. Sakin ama heyecansız bir maç.",
-          etki:{ form:-5, moral:+10 } } },
-
-    { metin:"Taraftarlar bootcamp (kamp) için bağış kampanyası başlatmak istiyor.",
-      A:{ yazi:"Destekle", sonuc:"Kampanya iyi gitti. Hem para hem sevgi geldi.",
-          etki:{ butce:+10, taraftar:+10, moral:-5 } },
-      B:{ yazi:"Gerek yok", sonuc:"Taraftar kırıldı ama takım rahat.",
-          etki:{ taraftar:-15, moral:+5 } } },
-
-    { metin:"Bilinmeyen genç bir yetenek deneme istiyor. Ya süper yıldız çıkar ya da boşa gider.",
-      A:{ yazi:"Şansını dene", risk:{ sans:0.4,
-          basari:{ metin:"Genç oyuncu müthiş çıktı! Takıma taze kan geldi.",
-                   etki:{ form:+20, taraftar:+10, moral:+5 } },
-          basarisiz:{ metin:"Oyuncu baskıya dayanamadı, para boşa gitti.",
-                      etki:{ butce:-15, moral:-5 } } } },
-      B:{ yazi:"Geri çevir", sonuc:"Yeteneği geri çevirdin. Her şey olduğu gibi kaldı.",
-          etki:{ moral:+5, butce:+5 } } },
-
-    { metin:"Takım yayıncı oyuncun canlı yayında kötü oynayınca izleyiciler dalga geçti.",
-      A:{ yazi:"Yayını kısıtla", sonuc:"Yayınlar azaldı. Oyuncu rahatladı ama izleyici sayısı düştü.",
-          etki:{ taraftar:-10, form:+10 } },
-      B:{ yazi:"Yayına devam", sonuc:"Yayınlar devam ediyor. İzleyici artıyor ama oyuncu stresli.",
-          etki:{ taraftar:+10, moral:-10 } } },
-
-    { metin:"Rakip takımın koçu gizlice sana koçluk teklifi yapıyor.",
-      A:{ yazi:"Koçu al", risk:{ sans:0.5,
-          basari:{ metin:"Yeni koç harika! Takım uçuşa geçti.",
-                   etki:{ form:+20, moral:+10, butce:-10 } },
-          basarisiz:{ metin:"Yeni koç takımla uyuşamadı. Büyük kargaşa çıktı.",
-                      etki:{ moral:-20, butce:-15 } } } },
-      B:{ yazi:"Reddet", sonuc:"Teklifi geri çevirdin. Takım düzeni bozulmadı.",
-          etki:{ moral:+5 } } },
-
-    { metin:"Oyuncular hafta sonu tatil istiyor. Ama önümüzde önemli bir maç var.",
-      A:{ yazi:"Tatil ver", sonuc:"Oyuncular dinlendi, mutlular. Ama hazırlık eksik kaldı.",
-          etki:{ moral:+20, form:-10, butce:-5 } },
-      B:{ yazi:"Çalıştır", sonuc:"Kamp devam etti. Hazırlık iyi ama oyuncular yorgun.",
-          etki:{ form:+15, moral:-15 } } },
-
-    { metin:"Büyük bir enerji içeceği markası sponsorluk için masaya oturdu. Ama taraftarlar bu markayı sevmiyor.",
-      A:{ yazi:"İmzala", sonuc:"Para kasaya aktı ama taraftar homurdandı.",
-          etki:{ butce:+25, taraftar:-15 } },
-      B:{ yazi:"Reddet", sonuc:"Taraftar bu kararı sevdi ama kasa boş kaldı.",
-          etki:{ butce:-5, taraftar:+10 } } }
-  ];
 
   function sinirla(x) { return Math.max(0, Math.min(100, x)); }
 
