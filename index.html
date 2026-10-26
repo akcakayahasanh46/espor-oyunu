@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Espor Menajer</title>
+<style>
+  body { background:#0d0f1a; color:#e8eaf6; font-family:Arial,sans-serif;
+         margin:0; display:flex; justify-content:center; padding:20px; }
+  #oyun { width:100%; max-width:480px; }
+  h1 { text-align:center; color:#7c4dff; margin:0 0 20px; }
+  .stats { display:flex; gap:10px; margin-bottom:20px; }
+  .stat { flex:1; text-align:center; font-size:13px; }
+  .bar { height:10px; background:#252a44; border-radius:5px; margin-top:6px; overflow:hidden; }
+  .dolu { height:100%; background:#00e5ff; width:50%; transition:width .4s; }
+  #kart { background:#171b30; border:1px solid #2e3558; border-radius:12px;
+          padding:24px; min-height:120px; font-size:18px; line-height:1.5; }
+  .butonlar { display:flex; gap:10px; margin-top:16px; }
+  button { flex:1; padding:14px; font-size:15px; color:#fff; background:#7c4dff;
+           border:none; border-radius:8px; cursor:pointer; }
+  button:hover { background:#9e7bff; }
+  #sayac { text-align:center; margin-top:16px; color:#8a90b8; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="oyun">
+  <h1>ESPOR MENAJER</h1>
+
+  <div class="stats">
+    <div class="stat">💰 Bütçe<div class="bar"><div class="dolu" id="butce"></div></div></div>
+    <div class="stat">🏆 Form<div class="bar"><div class="dolu" id="form"></div></div></div>
+    <div class="stat">📣 Taraftar<div class="bar"><div class="dolu" id="taraftar"></div></div></div>
+    <div class="stat">🧠 Moral<div class="bar"><div class="dolu" id="moral"></div></div></div>
+  </div>
+
+  <div id="kart"></div>
+  <div class="butonlar">
+    <button id="btnA"></button>
+    <button id="btnB"></button>
+  </div>
+  <div id="sayac"></div>
+</div>
+
+<script>
+  // Göstergeler (0-100 arası). Herhangi biri 0 veya 100 olursa oyun biter.
+  let stats = { butce:50, form:50, taraftar:50, moral:50 };
+  let hafta = 1;
+  let kart = null;
+
+  // Olay kartları: her seçimin göstergelere etkisi (+ artırır, - azaltır)
+  const kartlar = [
+    { metin:"Rakip takım yıldız oyuncunu yüksek paraya transfer etmek istiyor.",
+      A:{ yazi:"Sat",       etki:{ butce:+20, moral:-15, form:-10 } },
+      B:{ yazi:"Reddet",    etki:{ butce:-5,  moral:+15, form:+5 } } },
+    { metin:"Ünlü bir yayıncı seni sponsor etmek istiyor ama takımın antrenman saatleri kısalacak.",
+      A:{ yazi:"Kabul et",  etki:{ butce:+15, taraftar:+10, form:-15 } },
+      B:{ yazi:"Reddet",    etki:{ butce:-5,  form:+10 } } },
+    { metin:"Takım kaptanı sosyal medyada hakeme küfretti. Taraftarlar tepkili.",
+      A:{ yazi:"Cezalandır",etki:{ moral:-15, taraftar:+15 } },
+      B:{ yazi:"Savun",     etki:{ moral:+15, taraftar:-15 } } },
+    { metin:"Büyük final öncesi koç, riskli bir taktik denemek istiyor.",
+      A:{ yazi:"Onayla",    etki:{ form:+20, moral:-5, butce:-5 } },
+      B:{ yazi:"Güvenli oyna", etki:{ form:-10, moral:+10 } } },
+    { metin:"Taraftarlar bootcamp (kamp) için bağış kampanyası başlatmak istiyor.",
+      A:{ yazi:"Destekle",  etki:{ butce:+10, taraftar:+10, moral:-5 } },
+      B:{ yazi:"Gerek yok", etki:{ taraftar:-15, moral:+5 } } }
+  ];
+
+  function sinirla(x) { return Math.max(0, Math.min(100, x)); }
+
+  function ekraniGuncelle() {
+    for (const ad in stats) {
+      document.getElementById(ad).style.width = stats[ad] + "%";
+    }
+    document.getElementById("sayac").textContent = "Hafta: " + hafta;
+  }
+
+  function yeniKart() {
+    kart = kartlar[Math.floor(Math.random() * kartlar.length)];
+    document.getElementById("kart").textContent = kart.metin;
+    document.getElementById("btnA").textContent = kart.A.yazi;
+    document.getElementById("btnB").textContent = kart.B.yazi;
+  }
+
+  function sec(secim) {
+    const etki = kart[secim].etki;
+    for (const ad in etki) {
+      stats[ad] = sinirla(stats[ad] + etki[ad]);
+    }
+    hafta++;
+    ekraniGuncelle();
+    if (oyunBittiMi()) return;
+    yeniKart();
+  }
+
+  function oyunBittiMi() {
+    const isimler = { butce:"Bütçe", form:"Form", taraftar:"Taraftar", moral:"Moral" };
+    for (const ad in stats) {
+      if (stats[ad] <= 0 || stats[ad] >= 100) {
+        const durum = stats[ad] <= 0 ? "tükendi" : "kontrolden çıktı";
+        document.getElementById("kart").innerHTML =
+          "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " " + durum +
+          ".<br>" + (hafta - 1) + " hafta dayanabildin.";
+        document.getElementById("btnA").textContent = "Yeniden Başla";
+        document.getElementById("btnB").style.display = "none";
+        document.getElementById("btnA").onclick = yenidenBasla;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function yenidenBasla() {
+    stats = { butce:50, form:50, taraftar:50, moral:50 };
+    hafta = 1;
+    document.getElementById("btnB").style.display = "";
+    document.getElementById("btnA").onclick = () => sec("A");
+    ekraniGuncelle();
+    yeniKart();
+  }
+
+  document.getElementById("btnA").onclick = () => sec("A");
+  document.getElementById("btnB").onclick = () => sec("B");
+  ekraniGuncelle();
+  yeniKart();
+</script>
+</body>
+</html>
