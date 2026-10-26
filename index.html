@@ -18,14 +18,17 @@
           padding:24px; min-height:140px; font-size:18px; line-height:1.5; }
   .basari { color:#69f0ae; font-weight:bold; }
   .basarisiz { color:#ff5252; font-weight:bold; }
+  .uyari { color:#ffd740; font-weight:bold; font-size:15px; margin-bottom:12px; }
   .etki { margin-top:14px; font-size:15px; line-height:1.8; }
   .art { color:#69f0ae; }
   .azal { color:#ff8a80; }
+  .gider { color:#8a90b8; }
   .butonlar { display:flex; gap:10px; margin-top:16px; }
   button { flex:1; padding:14px; font-size:15px; color:#fff; background:#7c4dff;
            border:none; border-radius:8px; cursor:pointer; }
   button:hover { background:#9e7bff; }
   #sayac { text-align:center; margin-top:16px; color:#8a90b8; font-size:14px; }
+  #tehlikeYazi { text-align:center; margin-top:8px; color:#ff5252; font-size:14px; font-weight:bold; min-height:18px; }
 </style>
 </head>
 <body>
@@ -45,16 +48,20 @@
     <button id="btnB"></button>
   </div>
   <div id="sayac"></div>
+  <div id="tehlikeYazi"></div>
 </div>
 
 <script>
   // Göstergeler 0-100 arası. SADECE 0'a düşerse oyun biter. 100'de kalır.
   const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
+  const HAFTALIK_GIDER = 2;   // Her hafta bütçeden düşen miktar
   let stats, hafta, kart, deste, sonKart, asama;
   // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
 
-  // Normal seçenek: { yazi, sonuc (açıklama), etki }
-  // Riskli seçenek: { yazi, risk:{ sans (0-1 arası), basari:{metin,etki}, basarisiz:{metin,etki} } }
+  // Seviye: her 5 haftada bir artar. Olumsuz etkiler her seviyede %10 büyür (en fazla 2 kat).
+  function seviyeHesapla(h) { return Math.floor((h - 1) / 5) + 1; }
+  function carpanHesapla(h) { return Math.min(2, 1 + 0.1 * (seviyeHesapla(h) - 1)); }
+
   const kartlar = [
     { metin:"Rakip takım yıldız oyuncunu yüksek paraya transfer etmek istiyor.",
       A:{ yazi:"Sat", sonuc:"Oyuncuyu sattın. Kasa doldu ama takımda huzursuzluk var.",
@@ -129,12 +136,18 @@
   function sinirla(x) { return Math.max(0, Math.min(100, x)); }
 
   function ekraniGuncelle() {
+    const tehlikeli = [];
     for (const ad in stats) {
       const bar = document.getElementById(ad);
       bar.style.width = stats[ad] + "%";
-      bar.classList.toggle("tehlike", stats[ad] <= 20);
+      const tehlikede = stats[ad] <= 20;
+      bar.classList.toggle("tehlike", tehlikede);
+      if (tehlikede) tehlikeli.push(isimler[ad]);
     }
-    document.getElementById("sayac").textContent = "Hafta: " + hafta;
+    document.getElementById("sayac").textContent =
+      "Hafta: " + hafta + "  ·  Seviye: " + seviyeHesapla(hafta);
+    document.getElementById("tehlikeYazi").textContent =
+      tehlikeli.length > 0 ? "⚠️ Tehlikede: " + tehlikeli.join(", ") : "";
   }
 
   // Desteyi karıştırır; aynı kart arka arkaya gelmesin diye kontrol eder
@@ -144,20 +157,20 @@
       const j = Math.floor(Math.random() * (i + 1));
       [d[i], d[j]] = [d[j], d[i]];
     }
-    // Çekilecek kart (listenin sonu) bir önceki kartla aynıysa yer değiştir
     if (d[d.length - 1] === sonKart && d.length > 1) {
       [d[d.length - 1], d[0]] = [d[0], d[d.length - 1]];
     }
     return d;
   }
 
-  function yeniKart() {
+  function yeniKart(uyari) {
     if (deste.length === 0) deste = desteyiKaristir();
     const index = deste.pop();
     sonKart = index;
     kart = kartlar[index];
     asama = "soru";
-    document.getElementById("kart").textContent = kart.metin;
+    document.getElementById("kart").innerHTML =
+      (uyari ? '<div class="uyari">' + uyari + "</div>" : "") + kart.metin;
     document.getElementById("btnA").textContent = kart.A.risk ? "🎲 " + kart.A.yazi : kart.A.yazi;
     document.getElementById("btnB").textContent = kart.B.risk ? "🎲 " + kart.B.yazi : kart.B.yazi;
     document.getElementById("btnB").style.display = "";
@@ -191,13 +204,25 @@
       etki = secenek.etki;
     }
 
+    // Zorluk: olumsuz etkiler seviyeye göre büyür
+    const carpan = carpanHesapla(hafta);
+    const olcekli = {};
     for (const ad in etki) {
-      stats[ad] = sinirla(stats[ad] + etki[ad]);
+      const d = etki[ad];
+      olcekli[ad] = d < 0 ? Math.round(d * carpan) : d;
     }
+
+    for (const ad in olcekli) {
+      stats[ad] = sinirla(stats[ad] + olcekli[ad]);
+    }
+    // Haftalık gider
+    stats.butce = sinirla(stats.butce - HAFTALIK_GIDER);
     ekraniGuncelle();
 
     document.getElementById("kart").innerHTML =
-      baslik + metin + '<div class="etki">' + etkiYazisi(etki) + "</div>";
+      baslik + metin +
+      '<div class="etki">' + etkiYazisi(olcekli) +
+      '<span class="gider">🧾 Haftalık gider: 💰 Bütçe -' + HAFTALIK_GIDER + "</span></div>";
     document.getElementById("btnA").textContent = "Devam";
     document.getElementById("btnB").style.display = "none";
     asama = "sonuc";
@@ -210,15 +235,22 @@
         asama = "bitti";
         document.getElementById("kart").innerHTML =
           "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " tükendi.<br>" +
-          hafta + " hafta dayanabildin.";
+          hafta + " hafta dayandın. Seviye: " + seviyeHesapla(hafta);
         document.getElementById("btnA").textContent = "Yeniden Başla";
         document.getElementById("btnB").style.display = "none";
         return;
       }
     }
+    const eskiSeviye = seviyeHesapla(hafta);
     hafta++;
+    const yeniSeviye = seviyeHesapla(hafta);
+    let uyari = "";
+    if (yeniSeviye > eskiSeviye) {
+      const yuzde = Math.round((carpanHesapla(hafta) - 1) * 100);
+      uyari = "⚠️ SEVİYE " + yeniSeviye + ": Olumsuz etkiler %" + yuzde + " arttı!";
+    }
     ekraniGuncelle();
-    yeniKart();
+    yeniKart(uyari);
   }
 
   function yenidenBasla() {
