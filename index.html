@@ -62,6 +62,16 @@
   .azal { color:#ff8a80; }
   .gider { color:#8a90b8; }
 
+  /* Rekor */
+  .yeniRekor { color:#ffd740; font-weight:bold; font-size:20px; margin-top:16px;
+               text-shadow:0 0 12px rgba(255,215,64,.6); animation: nabiz 1s ease-in-out 3; }
+  .rekorBilgi { color:#ffd740; font-size:15px; margin-top:16px; }
+  .rekorKutu { display:flex; gap:8px; margin-bottom:18px; padding:12px 8px;
+               background:#141830; border:1px solid #2e3558; border-radius:12px; }
+  .rekorKutu div { flex:1; text-align:center; font-size:12px; color:#8a90b8; }
+  .rekorKutu b { display:block; font-size:20px; color:#ffd740; margin-top:4px; }
+  .rekorBaslik { text-align:center; font-size:12px; color:#8a90b8; margin-bottom:6px; letter-spacing:1px; }
+
   /* Butonlar */
   .butonlar { display:flex; gap:10px; margin-top:16px; }
   button { flex:1; padding:14px; font-size:15px; color:#fff;
@@ -78,6 +88,7 @@
   .menu-liste { display:flex; flex-direction:column; gap:12px; }
   .menu-liste button { flex:none; padding:18px; font-size:17px; }
   .menu-liste small { display:block; margin-top:4px; font-size:12px; opacity:.8; }
+  .menu-liste small.rekorEtiket { color:#ffd740; opacity:1; font-weight:bold; }
   .ekran.aktif .menu-liste > * { animation: yukari .45s ease-out both; }
   .ekran.aktif .menu-liste > *:nth-child(1) { animation-delay:.03s; }
   .ekran.aktif .menu-liste > *:nth-child(2) { animation-delay:.10s; }
@@ -133,6 +144,12 @@
 
   <!-- ANA MENÜ -->
   <div id="ekranMenu" class="ekran">
+    <div class="rekorBaslik">🏆 REKORLAR (HAFTA)</div>
+    <div class="rekorKutu">
+      <div>Orta<b id="menuRekorOrta">0</b></div>
+      <div>Zor<b id="menuRekorZor">0</b></div>
+      <div>Çok Zor<b id="menuRekorCokZor">0</b></div>
+    </div>
     <div class="menu-liste">
       <button id="btnDevamEt"></button>
       <button id="btnYeniOyun">🎮 Yeni Oyun</button>
@@ -144,9 +161,9 @@
   <div id="ekranMod" class="ekran">
     <h2>Zorluk Seç</h2>
     <div class="menu-liste">
-      <button class="mod-btn" id="modOrta"><b>Orta</b><small>Daha rahat. Giderler düşük, zorluk yavaş artar.</small></button>
-      <button class="mod-btn" id="modZor"><b>Zor</b><small>Dengeli ve zorlu. Standart deneyim.</small></button>
-      <button class="mod-btn" id="modCokZor"><b>Çok Zor</b><small>Acımasız. Yüksek gider, hızlı zorluk, düşük şans.</small></button>
+      <button class="mod-btn" id="modOrta"><b>Orta</b><small>Daha rahat. Giderler düşük, zorluk yavaş artar.</small><small class="rekorEtiket" id="modRekorOrta"></small></button>
+      <button class="mod-btn" id="modZor"><b>Zor</b><small>Dengeli ve zorlu. Standart deneyim.</small><small class="rekorEtiket" id="modRekorZor"></small></button>
+      <button class="mod-btn" id="modCokZor"><b>Çok Zor</b><small>Acımasız. Yüksek gider, hızlı zorluk, düşük şans.</small><small class="rekorEtiket" id="modRekorCokZor"></small></button>
       <button class="ikincil" id="btnModGeri">← Geri</button>
     </div>
   </div>
@@ -192,6 +209,7 @@
   // ---------- AYARLAR ----------
   const EPOSTA = "kritiksecimespor@gmail.com";
   const KAYIT_ANAHTARI = "kritikSecimEsporKayit";
+  const REKOR_ANAHTARI = "kritikSecimEsporRekor";
   const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
 
   // Zorluk modları. "zor" oyunun önceki haliyle aynıdır.
@@ -262,6 +280,35 @@
     try { localStorage.removeItem(KAYIT_ANAHTARI); } catch (e) {}
   }
 
+  // ---------- REKORLAR ----------
+  function rekorlariOku() {
+    try {
+      const v = localStorage.getItem(REKOR_ANAHTARI);
+      const r = v ? JSON.parse(v) : {};
+      return { orta: Number(r.orta) || 0, zor: Number(r.zor) || 0, cokzor: Number(r.cokzor) || 0 };
+    } catch (e) {
+      return { orta:0, zor:0, cokzor:0 };
+    }
+  }
+
+  function rekorlariKaydet(r) {
+    try { localStorage.setItem(REKOR_ANAHTARI, JSON.stringify(r)); } catch (e) {}
+  }
+
+  function rekorYazisi(deger) {
+    return deger > 0 ? "🏆 Rekor: " + deger + " hafta" : "🏆 Henüz rekor yok";
+  }
+
+  function rekorlariGoster() {
+    const r = rekorlariOku();
+    document.getElementById("menuRekorOrta").textContent = r.orta;
+    document.getElementById("menuRekorZor").textContent = r.zor;
+    document.getElementById("menuRekorCokZor").textContent = r.cokzor;
+    document.getElementById("modRekorOrta").textContent = rekorYazisi(r.orta);
+    document.getElementById("modRekorZor").textContent = rekorYazisi(r.zor);
+    document.getElementById("modRekorCokZor").textContent = rekorYazisi(r.cokzor);
+  }
+
   // ---------- ANA MENÜ ----------
   function menuyuGuncelle() {
     const k = kayitOku();
@@ -273,6 +320,7 @@
       btn.disabled = true;
       btn.innerHTML = "▶️ Devam Et<small>Kayıtlı oyun yok</small>";
     }
+    rekorlariGoster();
   }
 
   function menuyeDon() {
@@ -405,10 +453,23 @@
       if (stats[ad] <= 0) {
         asama = "bitti";
         kayitSil();
+
+        // Rekor kontrolü
+        const rekorlar = rekorlariOku();
+        const eskiRekor = rekorlar[mod];
+        let rekorHtml;
+        if (hafta > eskiRekor) {
+          rekorlar[mod] = hafta;
+          rekorlariKaydet(rekorlar);
+          rekorHtml = '<div class="yeniRekor">🏆 YENİ REKOR!</div>';
+        } else {
+          rekorHtml = '<div class="rekorBilgi">🏆 ' + MODLAR[mod].ad + " rekorun: " + eskiRekor + " hafta</div>";
+        }
+
         document.getElementById("kart").innerHTML =
           "<b>OYUN BİTTİ</b><br><br>" + isimler[ad] + " tükendi.<br>" +
           hafta + " hafta dayandın. Mod: " + MODLAR[mod].ad +
-          " · Seviye: " + seviyeHesapla(hafta);
+          " · Seviye: " + seviyeHesapla(hafta) + rekorHtml;
         efekt("efektBitti");
         document.getElementById("btnA").textContent = "Yeniden Başla";
         document.getElementById("btnB").textContent = "Ana Menü";
@@ -475,6 +536,7 @@
   document.getElementById("btnDevamEt").onclick = devamEt;
   document.getElementById("btnYeniOyun").onclick = function () {
     if (kayitOku() && !confirm("Kayıtlı oyunun silinecek. Yeni oyun başlatılsın mı?")) return;
+    rekorlariGoster();
     ekranGoster("ekranMod");
   };
   document.getElementById("btnGeriBildirim").onclick = function () { ekranGoster("ekranGeriBildirim"); };
