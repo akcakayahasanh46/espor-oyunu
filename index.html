@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-title" content="Kritik Seçim">
+<meta name="theme-color" content="#0d0f1a">
 <title>Kritik Seçim Espor</title>
 <style>
   * { -webkit-tap-highlight-color: transparent; }
@@ -27,6 +29,11 @@
 
   .ekran { display:none; }
   .ekran.aktif { display:block; animation: ekranGiris .35s ease-out; }
+
+  /* Ana menü resmi */
+  .logo { display:block; margin:0 auto 20px; width:130px; height:130px;
+          border-radius:29px; box-shadow:0 0 28px rgba(124,77,255,.55), 0 0 60px rgba(0,229,255,.18);
+          animation: logoParla 4s ease-in-out infinite; }
 
   /* Göstergeler */
   .stats { display:flex; gap:8px; margin-bottom:20px; }
@@ -131,6 +138,8 @@
   @keyframes nabiz { 0%,100% { opacity:1; } 50% { opacity:.45; } }
   @keyframes baslikParla { 0%,100% { filter:drop-shadow(0 0 6px rgba(124,77,255,.5)); }
                            50% { filter:drop-shadow(0 0 14px rgba(0,229,255,.6)); } }
+  @keyframes logoParla { 0%,100% { box-shadow:0 0 22px rgba(124,77,255,.5), 0 0 50px rgba(0,229,255,.12); }
+                         50% { box-shadow:0 0 34px rgba(124,77,255,.7), 0 0 70px rgba(0,229,255,.28); } }
   @keyframes arkaPlan { 0%,100% { opacity:.75; } 50% { opacity:1; } }
 
   /* Hareketi azalt ayarı açıksa animasyonları kapat */
@@ -145,6 +154,7 @@
 
   <!-- ANA MENÜ -->
   <div id="ekranMenu" class="ekran">
+    <canvas id="logoCanvas" class="logo" width="512" height="512"></canvas>
     <div class="rekorBaslik">🏆 REKORLAR (HAFTA)</div>
     <div class="rekorKutu">
       <div>Orta<b id="menuRekorOrta">0</b></div>
@@ -232,6 +242,90 @@
   // ---------- OYUN DEĞİŞKENLERİ ----------
   let stats, hafta, mod, kart, kartIndex, deste, sonKart, asama;
   // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
+
+  // ---------- İKON / LOGO ÇİZİMİ ----------
+  // Resim dosyası yok: logo, tarayıcıda çizilir. Aynı çizim hem ana menüde
+  // hem de ana ekran (uygulama) ikonunda kullanılır.
+  function ikonCiz(c) {
+    const x = c.getContext("2d");
+    const s = c.width;
+
+    // Koyu zemin (tam dolu kare: iPhone köşeleri kendisi yuvarlar)
+    x.fillStyle = "#0d0f1a";
+    x.fillRect(0, 0, s, s);
+
+    // Mor ve mavi ışık hâleleri
+    let g = x.createRadialGradient(s * 0.2, s * 0.15, 0, s * 0.2, s * 0.15, s * 0.75);
+    g.addColorStop(0, "rgba(124,77,255,0.60)");
+    g.addColorStop(1, "rgba(124,77,255,0)");
+    x.fillStyle = g;
+    x.fillRect(0, 0, s, s);
+
+    g = x.createRadialGradient(s * 0.85, s * 0.9, 0, s * 0.85, s * 0.9, s * 0.7);
+    g.addColorStop(0, "rgba(0,229,255,0.45)");
+    g.addColorStop(1, "rgba(0,229,255,0)");
+    x.fillStyle = g;
+    x.fillRect(0, 0, s, s);
+
+    // Neon altıgen
+    const cx = s / 2, cy = s * 0.46, r = s * 0.32;
+    x.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (-90 + i * 60) * Math.PI / 180;
+      const px = cx + r * Math.cos(a);
+      const py = cy + r * Math.sin(a);
+      if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+    }
+    x.closePath();
+    x.fillStyle = "rgba(20,24,48,0.85)";
+    x.fill();
+
+    const kenar = x.createLinearGradient(0, 0, s, s);
+    kenar.addColorStop(0, "#7c4dff");
+    kenar.addColorStop(1, "#00e5ff");
+    x.lineWidth = s * 0.028;
+    x.lineJoin = "round";
+    x.strokeStyle = kenar;
+    x.shadowColor = "#7c4dff";
+    x.shadowBlur = s * 0.05;
+    x.stroke();
+
+    // KS harfleri
+    x.shadowBlur = s * 0.035;
+    x.shadowColor = "#00e5ff";
+    const yazi = x.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    yazi.addColorStop(0, "#9e7bff");
+    yazi.addColorStop(1, "#00e5ff");
+    x.fillStyle = yazi;
+    x.font = "bold " + Math.round(s * 0.30) + "px Arial, Helvetica, sans-serif";
+    x.textAlign = "center";
+    x.textBaseline = "middle";
+    x.fillText("KS", cx, cy + s * 0.01);
+
+    // E S P O R yazısı
+    x.shadowBlur = 0;
+    x.fillStyle = "#e8eaf6";
+    x.font = "bold " + Math.round(s * 0.085) + "px Arial, Helvetica, sans-serif";
+    x.fillText("E S P O R", cx, s * 0.885);
+  }
+
+  // Tarayıcı sekmesi ve iPhone "Ana Ekrana Ekle" için ikonu hazırla
+  function ikonuHazirla() {
+    try {
+      const c = document.createElement("canvas");
+      c.width = 512;
+      c.height = 512;
+      ikonCiz(c);
+      const url = c.toDataURL("image/png");
+      ["apple-touch-icon", "icon"].forEach(function (rel) {
+        const l = document.createElement("link");
+        l.rel = rel;
+        if (rel === "icon") l.type = "image/png";
+        l.href = url;
+        document.head.appendChild(l);
+      });
+    } catch (e) {}
+  }
 
   // ---------- SES SİSTEMİ ----------
   // Sesler dosyadan değil, tarayıcının kendi ses motoruyla üretilir.
@@ -677,6 +771,8 @@
   };
 
   // ---------- AÇILIŞ ----------
+  try { ikonCiz(document.getElementById("logoCanvas")); } catch (e) {}
+  ikonuHazirla();
   menuyeDon();
 </script>
 </body>
