@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-title" content="Kritik Seçim">
 <meta name="theme-color" content="#0d0f1a">
  <link rel="apple-touch-icon" href="ikon.png">
+ <link rel="manifest" href="manifest.json">
 <title>Kritik Seçim Espor</title>
 <style>
   * { -webkit-tap-highlight-color: transparent; }
@@ -155,7 +156,6 @@
 
   <!-- ANA MENÜ -->
   <div id="ekranMenu" class="ekran">
-    <canvas id="logoCanvas" class="logo" width="512" height="512"></canvas>
     <div class="rekorBaslik">🏆 REKORLAR (HAFTA)</div>
     <div class="rekorKutu">
       <div>Orta<b id="menuRekorOrta">0</b></div>
@@ -772,8 +772,8 @@
   };
 
   // ---------- AÇILIŞ ----------
-  try { ikonCiz(document.getElementById("logoCanvas")); } catch (e) {}
   menuyeDon();
+ if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
 </script>
 </body>
 </html>
