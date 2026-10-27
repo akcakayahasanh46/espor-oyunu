@@ -102,7 +102,8 @@
   #tehlikeYazi { text-align:center; margin-top:8px; color:#ff5252; font-size:14px;
                  font-weight:bold; min-height:18px; }
 
-  .menu-kucuk { flex:none; width:auto; padding:8px 14px; font-size:13px; margin-bottom:14px; }
+  .ustBar { display:flex; gap:8px; margin-bottom:14px; }
+  .menu-kucuk { flex:none; width:auto; padding:8px 14px; font-size:13px; }
 
   textarea { width:100%; box-sizing:border-box; min-height:140px; padding:12px; font-size:16px;
              background:#171b30; color:#e8eaf6; border:1px solid #2e3558; border-radius:10px;
@@ -154,6 +155,7 @@
       <button id="btnDevamEt"></button>
       <button id="btnYeniOyun">🎮 Yeni Oyun</button>
       <button id="btnGeriBildirim" class="ikincil">💬 Geri Bildirim</button>
+      <button id="btnSesMenu" class="ikincil"></button>
     </div>
   </div>
 
@@ -183,7 +185,10 @@
 
   <!-- OYUN EKRANI -->
   <div id="ekranOyun" class="ekran">
-    <button class="menu-kucuk ikincil" id="btnMenu">☰ Menü</button>
+    <div class="ustBar">
+      <button class="menu-kucuk ikincil" id="btnMenu">☰ Menü</button>
+      <button class="menu-kucuk ikincil" id="btnSesOyun"></button>
+    </div>
 
     <div class="stats">
       <div class="stat">💰 Bütçe<div class="bar"><div class="dolu" id="butce"></div></div></div>
@@ -210,6 +215,7 @@
   const EPOSTA = "kritiksecimespor@gmail.com";
   const KAYIT_ANAHTARI = "kritikSecimEsporKayit";
   const REKOR_ANAHTARI = "kritikSecimEsporRekor";
+  const SES_ANAHTARI = "kritikSecimEsporSes";
   const isimler = { butce:"💰 Bütçe", form:"🏆 Form", taraftar:"📣 Taraftar", moral:"🧠 Moral" };
 
   // Zorluk modları. "zor" oyunun önceki haliyle aynıdır.
@@ -226,6 +232,99 @@
   // ---------- OYUN DEĞİŞKENLERİ ----------
   let stats, hafta, mod, kart, kartIndex, deste, sonKart, asama;
   // asama: "soru" (kart gösteriliyor), "sonuc" (sonuç gösteriliyor), "bitti" (oyun bitti)
+
+  // ---------- SES SİSTEMİ ----------
+  // Sesler dosyadan değil, tarayıcının kendi ses motoruyla üretilir.
+  let sesAcik = true;
+  try { sesAcik = localStorage.getItem(SES_ANAHTARI) !== "kapali"; } catch (e) {}
+  let ac = null;
+
+  function sesBaslat() {
+    if (!ac) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) ac = new AC();
+      } catch (e) {}
+    }
+    if (ac && ac.state === "suspended") ac.resume();
+  }
+
+  // Tek bir nota çalar: frekans, başlangıç gecikmesi, süre, dalga tipi, ses seviyesi
+  function nota(frekans, gecikme, sure, tip, seviye) {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = tip || "sine";
+    o.frequency.value = frekans;
+    const t = ac.currentTime + gecikme;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(seviye || 0.15, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start(t);
+    o.stop(t + sure + 0.03);
+  }
+
+  function sesCal(ad) {
+    if (!sesAcik) return;
+    sesBaslat();
+    if (!ac) return;
+    try {
+      switch (ad) {
+        case "tikla":
+          nota(520, 0, 0.07, "triangle", 0.1);
+          break;
+        case "basari":
+          nota(523, 0.00, 0.14, "sine", 0.16);
+          nota(659, 0.09, 0.14, "sine", 0.16);
+          nota(784, 0.18, 0.14, "sine", 0.16);
+          nota(1047, 0.27, 0.30, "sine", 0.16);
+          break;
+        case "basarisiz":
+          nota(300, 0.00, 0.22, "sawtooth", 0.09);
+          nota(220, 0.16, 0.34, "sawtooth", 0.09);
+          break;
+        case "tehlike":
+          nota(180, 0.00, 0.14, "square", 0.07);
+          nota(180, 0.20, 0.14, "square", 0.07);
+          break;
+        case "seviye":
+          nota(600, 0.00, 0.14, "triangle", 0.15);
+          nota(800, 0.14, 0.26, "triangle", 0.15);
+          break;
+        case "bitti":
+          nota(392, 0.00, 0.28, "square", 0.08);
+          nota(330, 0.22, 0.28, "square", 0.08);
+          nota(262, 0.44, 0.28, "square", 0.08);
+          nota(196, 0.66, 0.55, "square", 0.08);
+          break;
+        case "rekor":
+          nota(523, 0.00, 0.14, "triangle", 0.16);
+          nota(659, 0.12, 0.14, "triangle", 0.16);
+          nota(784, 0.24, 0.14, "triangle", 0.16);
+          nota(1047, 0.36, 0.16, "triangle", 0.16);
+          nota(784, 0.50, 0.12, "triangle", 0.16);
+          nota(1047, 0.60, 0.45, "triangle", 0.16);
+          break;
+      }
+    } catch (e) {}
+  }
+
+  function sesDugmeleriniGuncelle() {
+    document.getElementById("btnSesMenu").textContent = sesAcik ? "🔊 Ses: Açık" : "🔇 Ses: Kapalı";
+    document.getElementById("btnSesOyun").textContent = sesAcik ? "🔊" : "🔇";
+  }
+
+  function sesDegistir() {
+    sesAcik = !sesAcik;
+    try { localStorage.setItem(SES_ANAHTARI, sesAcik ? "acik" : "kapali"); } catch (e) {}
+    sesDugmeleriniGuncelle();
+  }
+
+  // Her butona basınca kısa tık sesi (ses açıksa)
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("button")) sesCal("tikla");
+  });
 
   // ---------- EFEKTLER ----------
   // Karta bir animasyon sınıfı verir (öncekileri temizleyip yeniden başlatır)
@@ -321,6 +420,7 @@
       btn.innerHTML = "▶️ Devam Et<small>Kayıtlı oyun yok</small>";
     }
     rekorlariGoster();
+    sesDugmeleriniGuncelle();
   }
 
   function menuyeDon() {
@@ -436,6 +536,16 @@
     ekraniGuncelle();
     gostergeFlas(onceki);
 
+    // Sesler: riskli seçimde sonuç sesi, ayrıca yeni tehlikeye giren gösterge varsa uyarı
+    if (riskli) sesCal(basarili ? "basari" : "basarisiz");
+    let yeniTehlike = false;
+    for (const ad in stats) {
+      if (stats[ad] <= 20 && onceki[ad] > 20) yeniTehlike = true;
+    }
+    if (yeniTehlike) {
+      setTimeout(function () { sesCal("tehlike"); }, riskli ? 650 : 150);
+    }
+
     document.getElementById("kart").innerHTML =
       baslik + metin +
       '<div class="etki">' + etkiYazisi(olcekli) +
@@ -462,8 +572,10 @@
           rekorlar[mod] = hafta;
           rekorlariKaydet(rekorlar);
           rekorHtml = '<div class="yeniRekor">🏆 YENİ REKOR!</div>';
+          sesCal("rekor");
         } else {
           rekorHtml = '<div class="rekorBilgi">🏆 ' + MODLAR[mod].ad + " rekorun: " + eskiRekor + " hafta</div>";
+          sesCal("bitti");
         }
 
         document.getElementById("kart").innerHTML =
@@ -487,6 +599,7 @@
       uyari = yuzde > 0
         ? "⚠️ SEVİYE " + yeniSeviye + ": Olumsuz etkiler %" + yuzde + " arttı!"
         : "⚠️ SEVİYE " + yeniSeviye + ": Zorluk en üst sınırda!";
+      sesCal("seviye");
     }
     ekraniGuncelle();
     yeniKart(uyari);
@@ -540,6 +653,8 @@
     ekranGoster("ekranMod");
   };
   document.getElementById("btnGeriBildirim").onclick = function () { ekranGoster("ekranGeriBildirim"); };
+  document.getElementById("btnSesMenu").onclick = sesDegistir;
+  document.getElementById("btnSesOyun").onclick = sesDegistir;
 
   document.getElementById("modOrta").onclick = function () { yeniOyunBaslat("orta"); };
   document.getElementById("modZor").onclick = function () { yeniOyunBaslat("zor"); };
